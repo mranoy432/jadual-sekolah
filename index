@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Pengurusan Jadual Sekolah</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for Inter font */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* Light gray background */
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        .card {
+            background-color: #ffffff;
+            border-radius: 0.75rem; /* rounded-xl */
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* shadow-md */
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .form-input {
+            border: 1px solid #d1d5db; /* border-gray-300 */
+            border-radius: 0.5rem; /* rounded-md */
+            padding: 0.75rem 1rem;
+            width: 100%;
+            transition: border-color 0.2s;
+        }
+        .form-input:focus {
+            outline: none;
+            border-color: #3b82f6; /* ring-blue-500 */
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5); /* ring-blue-500 */
+        }
+        .btn-primary {
+            background-color: #3b82f6; /* bg-blue-500 */
+            color: #ffffff; /* text-white */
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem; /* rounded-md */
+            transition: background-color 0.2s;
+        }
+        .btn-primary:hover {
+            background-color: #2563eb; /* bg-blue-600 */
+        }
+        .btn-secondary {
+            background-color: #6b7280; /* bg-gray-500 */
+            color: #ffffff; /* text-white */
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem; /* rounded-md */
+            transition: background-color 0.2s;
+        }
+        .btn-secondary:hover {
+            background-color: #4b5563; /* bg-gray-600 */
+        }
+        .tab-button {
+            padding: 0.75rem 1.25rem;
+            border-radius: 0.5rem;
+            background-color: #e5e7eb; /* bg-gray-200 */
+            color: #4b5563; /* text-gray-700 */
+            font-weight: 500;
+            transition: background-color 0.2s, color 0.2s;
+        }
+        .tab-button.active {
+            background-color: #3b82f6; /* bg-blue-500 */
+            color: #ffffff; /* text-white */
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        th, td {
+            border: 1px solid #e5e7eb; /* border-gray-200 */
+            padding: 0.75rem;
+            text-align: left;
+        }
+        th {
+            background-color: #f9fafb; /* bg-gray-50 */
+            font-weight: 600;
+            color: #374151; /* text-gray-700 */
+        }
+        .message-box {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: #4CAF50; /* Green */
+            color: white;
+            padding: 15px;
+            border-radius: 5px;
+            z-index: 1000;
+            display: none; /* Hidden by default */
+        }
+        .message-box.error {
+            background-color: #f44336; /* Red */
+        }
+    </style>
+</head>
+<body>
+    <div id="login-page" class="min-h-screen flex items-center justify-center bg-gray-100">
+        <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
+            <h2 class="text-2xl font-bold text-center mb-6 text-gray-800">Login</h2>
+            <form id="login-form">
+                <div class="mb-4">
+                    <label for="username" class="block text-gray-700 text-sm font-semibold mb-2">Nama Pengguna:</label>
+                    <input type="text" id="username" class="form-input" placeholder="Masukkan nama pengguna" required>
+                </div>
+                <div class="mb-6">
+                    <label for="password" class="block text-gray-700 text-sm font-semibold mb-2">Kata Laluan:</label>
+                    <input type="password" id="password" class="form-input" placeholder="Masukkan kata laluan" required>
+                </div>
+                <button type="submit" class="btn-primary w-full">Login</button>
+            </form>
+            <p class="text-center text-sm text-gray-600 mt-4">
+                <span class="font-semibold">Nama Pengguna:</span> admin <br>
+                <span class="font-semibold">Kata Laluan:</span> password
+            </p>
+        </div>
+    </div>
+
+    <div id="dashboard-page" class="hidden container py-8">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6 text-center">Sistem Pengurusan Jadual Sekolah</h1>
+
+        <!-- Navigation Tabs -->
+        <div class="flex justify-center space-x-4 mb-8">
+            <button id="tab-jadual" class="tab-button active">Paparan Jadual</button>
+            <button id="tab-data" class="tab-button">Pengurusan Data</button>
+            <button id="tab-absent" class="tab-button">Guru Tidak Hadir</button>
+        </div>
+
+        <!-- Message Box -->
+        <div id="message-box" class="message-box"></div>
+
+        <!-- Jadual Paparan Section -->
+        <div id="section-jadual" class="card">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-4">Jadual Kelas</h2>
+            <div class="mb-4">
+                <label for="filter-class" class="block text-gray-700 text-sm font-semibold mb-2">Pilih Kelas:</label>
+                <select id="filter-class" class="form-input w-auto">
+                    <option value="">Semua Kelas</option>
+                    <!-- Options will be populated by JS -->
+                </select>
+            </div>
+            <div class="mb-4">
+                <label for="filter-teacher" class="block text-gray-700 text-sm font-semibold mb-2">Pilih Guru:</label>
+                <select id="filter-teacher" class="form-input w-auto">
+                    <option value="">Semua Guru</option>
+                    <!-- Options will be populated by JS -->
+                </select>
+            </div>
+            <div class="overflow-x-auto">
+                <table id="timetable-display-table">
+                    <thead>
+                        <tr>
+                            <th>Masa</th>
+                            <th>Isnin</th>
+                            <th>Selasa</th>
+                            <th>Rabu</th>
+                            <th>Khamis</th>
+                            <th>Jumaat</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Timetable rows will be populated by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Pengurusan Data Section -->
+        <div id="section-data" class="card hidden">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-4">Pengurusan Data</h2>
+
+            <!-- Add Class Form -->
+            <div class="mb-6 border-b pb-4 border-gray-200">
+                <h3 class="text-xl font-medium text-gray-700 mb-3">Tambah Kelas</h3>
+                <form id="add-class-form" class="flex flex-col sm:flex-row gap-4">
+                    <input type="text" id="class-name" class="form-input flex-grow" placeholder="Nama Kelas (cth: 1 Cemerlang)" required>
+                    <button type="submit" class="btn-primary">Tambah Kelas</button>
+                </form>
+                <div class="mt-4">
+                    <h4 class="font-semibold text-gray-700 mb-2">Senarai Kelas:</h4>
+                    <ul id="class-list" class="list-disc list-inside text-gray-600"></ul>
+                </div>
+            </div>
+
+            <!-- Add Teacher Form -->
+            <div class="mb-6 border-b pb-4 border-gray-200">
+                <h3 class="text-xl font-medium text-gray-700 mb-3">Tambah Guru</h3>
+                <form id="add-teacher-form" class="flex flex-col sm:flex-row gap-4">
+                    <input type="text" id="teacher-name" class="form-input flex-grow" placeholder="Nama Guru" required>
+                    <button type="submit" class="btn-primary">Tambah Guru</button>
+                </form>
+                <div class="mt-4">
+                    <h4 class="font-semibold text-gray-700 mb-2">Senarai Guru:</h4>
+                    <ul id="teacher-list" class="list-disc list-inside text-gray-600"></ul>
+                </div>
+            </div>
+
+            <!-- Add Subject Form -->
+            <div class="mb-6 border-b pb-4 border-gray-200">
+                <h3 class="text-xl font-medium text-gray-700 mb-3">Tambah Subjek</h3>
+                <form id="add-subject-form" class="flex flex-col sm:flex-row gap-4">
+                    <input type="text" id="subject-name" class="form-input flex-grow" placeholder="Nama Subjek (cth: Matematik)" required>
+                    <button type="submit" class="btn-primary">Tambah Subjek</button>
+                </form>
+                <div class="mt-4">
+                    <h4 class="font-semibold text-gray-700 mb-2">Senarai Subjek:</h4>
+                    <ul id="subject-list" class="list-disc list-inside text-gray-600"></ul>
+                </div>
+            </div>
+
+            <!-- Add Time Slot Form -->
+            <div class="mb-6 border-b pb-4 border-gray-200">
+                <h3 class="text-xl font-medium text-gray-700 mb-3">Tambah Slot Masa</h3>
+                <form id="add-time-form" class="flex flex-col sm:flex-row gap-4">
+                    <input type="time" id="time-start" class="form-input flex-grow" required>
+                    <input type="time" id="time-end" class="form-input flex-grow" required>
+                    <button type="submit" class="btn-primary">Tambah Slot Masa</button>
+                </form>
+                <div class="mt-4">
+                    <h4 class="font-semibold text-gray-700 mb-2">Senarai Slot Masa:</h4>
+                    <ul id="time-list" class="list-disc list-inside text-gray-600"></ul>
+                </div>
+            </div>
+
+            <!-- Manual Timetable Setting Form -->
+            <div class="mb-6">
+                <h3 class="text-xl font-medium text-gray-700 mb-3">Tetapan Jadual Manual</h3>
+                <form id="set-timetable-form">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label for="tt-class" class="block text-gray-700 text-sm font-semibold mb-2">Kelas:</label>
+                            <select id="tt-class" class="form-input" required>
+                                <option value="">Pilih Kelas</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="tt-day" class="block text-gray-700 text-sm font-semibold mb-2">Hari:</label>
+                            <select id="tt-day" class="form-input" required>
+                                <option value="">Pilih Hari</option>
+                                <option value="Isnin">Isnin</option>
+                                <option value="Selasa">Selasa</option>
+                                <option value="Rabu">Rabu</option>
+                                <option value="Khamis">Khamis</option>
+                                <option value="Jumaat">Jumaat</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="tt-time" class="block text-gray-700 text-sm font-semibold mb-2">Masa:</label>
+                            <select id="tt-time" class="form-input" required>
+                                <option value="">Pilih Masa</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="tt-subject" class="block text-gray-700 text-sm font-semibold mb-2">Subjek:</label>
+                            <select id="tt-subject" class="form-input" required>
+                                <option value="">Pilih Subjek</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="tt-teacher" class="block text-gray-700 text-sm font-semibold mb-2">Guru:</label>
+                            <select id="tt-teacher" class="form-input" required>
+                                <option value="">Pilih Guru</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-primary w-full">Tetapkan Jadual</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Guru Tidak Hadir Section -->
+        <div id="section-absent" class="card hidden">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-4">Pengurusan Guru Tidak Hadir</h2>
+
+            <div class="mb-6">
+                <h3 class="text-xl font-medium text-gray-700 mb-3">Tandakan Guru Tidak Hadir</h3>
+                <form id="mark-absent-form">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label for="absent-teacher" class="block text-gray-700 text-sm font-semibold mb-2">Guru Tidak Hadir:</label>
+                            <select id="absent-teacher" class="form-input" required>
+                                <option value="">Pilih Guru</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="absent-date" class="block text-gray-700 text-sm font-semibold mb-2">Tarikh Tidak Hadir:</label>
+                            <input type="date" id="absent-date" class="form-input" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-primary w-full">Tandakan Tidak Hadir</button>
+                </form>
+            </div>
+
+            <div class="mb-6">
+                <h3 class="text-xl font-medium text-gray-700 mb-3">Jadual Guru Ganti</h3>
+                <div class="overflow-x-auto">
+                    <table id="substitute-timetable-table">
+                        <thead>
+                            <tr>
+                                <th>Tarikh</th>
+                                <th>Guru Tidak Hadir</th>
+                                <th>Kelas</th>
+                                <th>Hari</th>
+                                <th>Masa</th>
+                                <th>Subjek</th>
+                                <th>Guru Ganti</th>
+                                <th>Tindakan</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Substitute timetable rows will be populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global data storage (using localStorage for simplicity)
+        let classes = JSON.parse(localStorage.getItem('classes')) || [];
+        let teachers = JSON.parse(localStorage.getItem('teachers')) || [];
+        let subjects = JSON.parse(localStorage.getItem('subjects')) || [];
+        let timeSlots = JSON.parse(localStorage.getItem('timeSlots')) || [];
+        let timetable = JSON.parse(localStorage.getItem('timetable')) || []; // { class: '1 Cemerlang', day: 'Isnin', time: '08:00-09:00', subject: 'Matematik', teacher: 'Cikgu Ali' }
+        let absentTeachers = JSON.parse(localStorage.getItem('absentTeachers')) || []; // { date: 'YYYY-MM-DD', teacher: 'Cikgu Ali', assignedSubstitute: [] }
+        let substituteAssignments = JSON.parse(localStorage.getItem('substituteAssignments')) || []; // { date: 'YYYY-MM-DD', absentTeacher: 'Cikgu Ali', class: '1 Cemerlang', day: 'Isnin', time: '08:00-09:00', subject: 'Matematik', substituteTeacher: 'Cikgu Bala' }
+
+        // DOM Elements
+        const loginPage = document.getElementById('login-page');
+        const dashboardPage = document.getElementById('dashboard-page');
+        const loginForm = document.getElementById('login-form');
+        const usernameInput = document.getElementById('username');
+        const passwordInput = document.getElementById('password');
+
+        const tabJadualBtn = document.getElementById('tab-jadual');
+        const tabDataBtn = document.getElementById('tab-data');
+        const tabAbsentBtn = document.getElementById('tab-absent');
+
+        const sectionJadual = document.getElementById('section-jadual');
+        const sectionData = document.getElementById('section-data');
+        const sectionAbsent = document.getElementById('section-absent');
+
+        const filterClassSelect = document.getElementById('filter-class');
+        const filterTeacherSelect = document.getElementById('filter-teacher');
+        const timetableDisplayTableBody = document.querySelector('#timetable-display-table tbody');
+
+        const addClassForm = document.getElementById('add-class-form');
+        const classNameInput = document.getElementById('class-name');
+        const classListUl = document.getElementById('class-list');
+
+        const addTeacherForm = document.getElementById('add-teacher-form');
+        const teacherNameInput = document.getElementById('teacher-name');
+        const teacherListUl = document.getElementById('teacher-list');
+
+        const addSubjectForm = document.getElementById('add-subject-form');
+        const subjectNameInput = document.getElementById('subject-name');
+        const subjectListUl = document.getElementById('subject-list');
+
+        const addTimeForm = document.getElementById('add-time-form');
+        const timeStartInput = document.getElementById('time-start');
+        const timeEndInput = document.getElementById('time-end');
+        const timeListUl = document.getElementById('time-list');
+
+        const setTimetableForm = document.getElementById('set-timetable-form');
+        const ttClassSelect = document.getElementById('tt-class');
+        const ttDaySelect = document.getElementById('tt-day');
+        const ttTimeSelect = document.getElementById('tt-time');
+        const ttSubjectSelect = document.getElementById('tt-subject');
+        const ttTeacherSelect = document.getElementById('tt-teacher');
+
+        const markAbsentForm = document.getElementById('mark-absent-form');
+        const absentTeacherSelect = document.getElementById('absent-teacher');
+        const absentDateInput = document.getElementById('absent-date');
+        const substituteTimetableTableBody = document.querySelector('#substitute-timetable-table tbody');
+
+        const messageBox = document.getElementById('message-box');
+
+        // --- Utility Functions ---
+
+        // Function to show a message (success/error)
+        function showMessage(message, isError = false) {
+            messageBox.textContent = message;
+            messageBox.classList.remove('error');
+            if (isError) {
+                messageBox.classList.add('error');
+            }
+            messageBox.style.display = 'block';
+            setTimeout(() => {
+                messageBox.style.display = 'none';
+            }, 3000); // Hide after 3 seconds
+        }
+
+        // Save data to localStorage
+        function saveData() {
+            localStorage.setItem('classes', JSON.stringify(classes));
+            localStorage.setItem('teachers', JSON.stringify(teachers));
+            localStorage.setItem('subjects', JSON.stringify(subjects));
+            localStorage.setItem('timeSlots', JSON.stringify(timeSlots));
+            localStorage.setItem('timetable', JSON.stringify(timetable));
+            localStorage.setItem('absentTeachers', JSON.stringify(absentTeachers));
+            localStorage.setItem('substituteAssignments', JSON.stringify(substituteAssignments));
+        }
+
+        // Populate dropdowns
+        function populateDropdown(selectElement, dataArray, valueKey = 'name', textKey = 'name') {
+            selectElement.innerHTML = '<option value="">Pilih...</option>';
+            dataArray.forEach(item => {
+                const option = document.createElement('option');
+                option.value = item[valueKey];
+                option.textContent = item[textKey];
+                selectElement.appendChild(option);
+            });
+        }
+
+        // Render lists (classes, teachers, subjects, times)
+        function renderList(ulElement, dataArray) {
+            ulElement.innerHTML = '';
+            dataArray.forEach(item => {
+                const li = document.createElement('li');
+                li.textContent = item.name || `${item.start} - ${item.end}`;
+                ulElement.appendChild(li);
+            });
+        }
+
+        // --- Login Logic ---
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const username = usernameInput.value;
+            const password = passwordInput.value;
+
+            // Simple client-side check for demo purposes
+            if (username === 'admin' && password === 'password') {
+                localStorage.setItem('loggedIn', 'true');
+                loginPage.classList.add('hidden');
+                dashboardPage.classList.remove('hidden');
+                initializeDashboard();
+            } else {
+                showMessage('Nama pengguna atau kata laluan salah.', true);
+            }
+        });
+
+        // Check login status on page load
+        window.addEventListener('load', () => {
+            if (localStorage.getItem('loggedIn') === 'true') {
+                loginPage.classList.add('hidden');
+                dashboardPage.classList.remove('hidden');
+                initializeDashboard();
+            }
+        });
+
+        // --- Dashboard Initialization ---
+        function initializeDashboard() {
+            renderAllLists();
+            populateAllDropdowns();
+            renderTimetableDisplay();
+            renderSubstituteTimetable();
+        }
+
+        function renderAllLists() {
+            renderList(classListUl, classes);
+            renderList(teacherListUl, teachers);
+            renderList(subjectListUl, subjects);
+            renderList(timeListUl, timeSlots);
+        }
+
+        function populateAllDropdowns() {
+            populateDropdown(filterClassSelect, classes);
+            populateDropdown(filterTeacherSelect, teachers);
+            populateDropdown(ttClassSelect, classes);
+            populateDropdown(ttTeacherSelect, teachers);
+            populateDropdown(ttSubjectSelect, subjects);
+            populateDropdown(ttTimeSelect, timeSlots, 'range', 'range'); // Use 'range' for value and text
+            populateDropdown(absentTeacherSelect, teachers);
+        }
+
+        // --- Tab Navigation ---
+        tabJadualBtn.addEventListener('click', () => switchTab('jadual'));
+        tabDataBtn.addEventListener('click', () => switchTab('data'));
+        tabAbsentBtn.addEventListener('click', () => switchTab('absent'));
+
+        function switchTab(tabName) {
+            // Hide all sections
+            sectionJadual.classList.add('hidden');
+            sectionData.classList.add('hidden');
+            sectionAbsent.classList.add('hidden');
+
+            // Deactivate all tab buttons
+            tabJadualBtn.classList.remove('active');
+            tabDataBtn.classList.remove('active');
+            tabAbsentBtn.classList.remove('active');
+
+            // Show selected section and activate button
+            if (tabName === 'jadual') {
+                sectionJadual.classList.remove('hidden');
+                tabJadualBtn.classList.add('active');
+                renderTimetableDisplay(); // Re-render when tab is active
+            } else if (tabName === 'data') {
+                sectionData.classList.remove('hidden');
+                tabDataBtn.classList.add('active');
+                renderAllLists(); // Re-render lists when tab is active
+                populateAllDropdowns(); // Re-populate dropdowns
+            } else if (tabName === 'absent') {
+                sectionAbsent.classList.remove('hidden');
+                tabAbsentBtn.classList.add('active');
+                populateDropdown(absentTeacherSelect, teachers); // Re-populate absent teacher dropdown
+                renderSubstituteTimetable(); // Re-render substitute timetable
+            }
+        }
+
+        // --- Data Management Forms ---
+
+        // Add Class
+        addClassForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const className = classNameInput.value.trim();
+            if (className && !classes.some(c => c.name === className)) {
+                classes.push({ name: className });
+                saveData();
+                renderList(classListUl, classes);
+                populateDropdown(filterClassSelect, classes);
+                populateDropdown(ttClassSelect, classes);
+                classNameInput.value = '';
+                showMessage('Kelas berjaya ditambah!');
+            } else {
+                showMessage('Nama kelas tidak sah atau sudah wujud.', true);
+            }
+        });
+
+        // Add Teacher
+        addTeacherForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const teacherName = teacherNameInput.value.trim();
+            if (teacherName && !teachers.some(t => t.name === teacherName)) {
+                teachers.push({ name: teacherName });
+                saveData();
+                renderList(teacherListUl, teachers);
+                populateDropdown(filterTeacherSelect, teachers);
+                populateDropdown(ttTeacherSelect, teachers);
+                populateDropdown(absentTeacherSelect, teachers);
+                teacherNameInput.value = '';
+                showMessage('Guru berjaya ditambah!');
+            } else {
+                showMessage('Nama guru tidak sah atau sudah wujud.', true);
+            }
+        });
+
+        // Add Subject
+        addSubjectForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const subjectName = subjectNameInput.value.trim();
+            if (subjectName && !subjects.some(s => s.name === subjectName)) {
+                subjects.push({ name: subjectName });
+                saveData();
+                renderList(subjectListUl, subjects);
+                populateDropdown(ttSubjectSelect, subjects);
+                subjectNameInput.value = '';
+                showMessage('Subjek berjaya ditambah!');
+            } else {
+                showMessage('Nama subjek tidak sah atau sudah wujud.', true);
+            }
+        });
+
+        // Add Time Slot
+        addTimeForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const startTime = timeStartInput.value;
+            const endTime = timeEndInput.value;
+            const timeRange = `${startTime}-${endTime}`;
+
+            if (startTime && endTime && !timeSlots.some(t => t.range === timeRange)) {
+                timeSlots.push({ start: startTime, end: endTime, range: timeRange });
+                timeSlots.sort((a, b) => a.start.localeCompare(b.start)); // Sort by start time
+                saveData();
+                renderList(timeListUl, timeSlots);
+                populateDropdown(ttTimeSelect, timeSlots, 'range', 'range');
+                timeStartInput.value = '';
+                timeEndInput.value = '';
+                showMessage('Slot masa berjaya ditambah!');
+            } else {
+                showMessage('Slot masa tidak sah atau sudah wujud.', true);
+            }
+        });
+
+        // --- Manual Timetable Setting ---
+        setTimetableForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const selectedClass = ttClassSelect.value;
+            const selectedDay = ttDaySelect.value;
+            const selectedTime = ttTimeSelect.value;
+            const selectedSubject = ttSubjectSelect.value;
+            const selectedTeacher = ttTeacherSelect.value;
+
+            if (!selectedClass || !selectedDay || !selectedTime || !selectedSubject || !selectedTeacher) {
+                showMessage('Sila lengkapkan semua medan untuk menetapkan jadual.', true);
+                return;
+            }
+
+            // Check for existing entry and update or add new
+            const existingIndex = timetable.findIndex(item =>
+                item.class === selectedClass &&
+                item.day === selectedDay &&
+                item.time === selectedTime
+            );
+
+            const newEntry = {
+                class: selectedClass,
+                day: selectedDay,
+                time: selectedTime,
+                subject: selectedSubject,
+                teacher: selectedTeacher
+            };
+
+            if (existingIndex > -1) {
+                timetable[existingIndex] = newEntry;
+                showMessage('Jadual berjaya dikemaskini!');
+            } else {
+                timetable.push(newEntry);
+                showMessage('Jadual berjaya ditambah!');
+            }
+
+            saveData();
+            renderTimetableDisplay(); // Update display after setting
+            setTimetableForm.reset();
+            populateAllDropdowns(); // Re-populate dropdowns to clear selection
+        });
+
+        // --- Timetable Display ---
+        filterClassSelect.addEventListener('change', renderTimetableDisplay);
+        filterTeacherSelect.addEventListener('change', renderTimetableDisplay);
+
+        function renderTimetableDisplay() {
+            const filterClass = filterClassSelect.value;
+            const filterTeacher = filterTeacherSelect.value;
+            timetableDisplayTableBody.innerHTML = '';
+
+            const days = ['Isnin', 'Selasa', 'Rabu', 'Khamis', 'Jumaat'];
+
+            timeSlots.forEach(timeSlot => {
+                const row = document.createElement('tr');
+                const timeCell = document.createElement('td');
+                timeCell.textContent = timeSlot.range;
+                row.appendChild(timeCell);
+
+                days.forEach(day => {
+                    const cell = document.createElement('td');
+                    // Find entries for this time, day, and apply filters
+                    const entries = timetable.filter(item =>
+                        item.time === timeSlot.range &&
+                        item.day === day &&
+                        (!filterClass || item.class === filterClass) &&
+                        (!filterTeacher || item.teacher === filterTeacher)
+                    );
+
+                    if (entries.length > 0) {
+                        entries.forEach(entry => {
+                            const div = document.createElement('div');
+                            div.innerHTML = `<strong>${entry.class}</strong><br>${entry.subject}<br>${entry.teacher}`;
+                            cell.appendChild(div);
+                        });
+                    } else {
+                        cell.textContent = '-'; // No class scheduled
+                    }
+                    row.appendChild(cell);
+                });
+                timetableDisplayTableBody.appendChild(row);
+            });
+        }
+
+        // --- Absent Teacher Management ---
+        markAbsentForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const absentTeacher = absentTeacherSelect.value;
+            const absentDate = absentDateInput.value;
+
+            if (!absentTeacher || !absentDate) {
+                showMessage('Sila pilih guru dan tarikh tidak hadir.', true);
+                return;
+            }
+
+            // Check if this teacher is already marked absent for this date
+            const existingAbsentEntry = absentTeachers.find(
+                entry => entry.teacher === absentTeacher && entry.date === absentDate
+            );
+
+            if (existingAbsentEntry) {
+                showMessage('Guru ini sudah ditandakan tidak hadir pada tarikh tersebut.', true);
+                return;
+            }
+
+            absentTeachers.push({
+                date: absentDate,
+                teacher: absentTeacher,
+                assignedSubstitutes: [] // To store assignments for this specific absence
+            });
+            saveData();
+            showMessage(`Guru ${absentTeacher} berjaya ditandakan tidak hadir pada ${absentDate}.`);
+            markAbsentForm.reset();
+            renderSubstituteTimetable(); // Update substitute table
+        });
+
+        function renderSubstituteTimetable() {
+            substituteTimetableTableBody.innerHTML = '';
+
+            // Filter out past absences if desired (optional)
+            const today = new Date().toISOString().split('T')[0];
+            const relevantAbsentTeachers = absentTeachers.filter(entry => entry.date >= today);
+
+            relevantAbsentTeachers.forEach(absentEntry => {
+                const classesToCover = timetable.filter(tt =>
+                    tt.teacher === absentEntry.teacher &&
+                    tt.day === new Date(absentEntry.date).toLocaleDateString('ms-MY', { weekday: 'long' }) // Get day name
+                );
+
+                if (classesToCover.length === 0) {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${absentEntry.date}</td>
+                        <td>${absentEntry.teacher}</td>
+                        <td colspan="5">Tiada kelas untuk guru ini pada hari tersebut.</td>
+                        <td></td>
+                    `;
+                    substituteTimetableTableBody.appendChild(row);
+                } else {
+                    classesToCover.forEach(classToCover => {
+                        const assignedSubstitute = absentEntry.assignedSubstitutes.find(
+                            sub => sub.class === classToCover.class && sub.time === classToCover.time
+                        );
+
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${absentEntry.date}</td>
+                            <td>${absentEntry.teacher}</td>
+                            <td>${classToCover.class}</td>
+                            <td>${classToCover.day}</td>
+                            <td>${classToCover.time}</td>
+                            <td>${classToCover.subject}</td>
+                            <td class="substitute-teacher-cell-${absentEntry.date}-${classToCover.class}-${classToCover.time}">
+                                ${assignedSubstitute ? assignedSubstitute.substituteTeacher : '<span class="text-red-500">Belum ditugaskan</span>'}
+                            </td>
+                            <td>
+                                <button class="btn-primary btn-assign-substitute text-sm px-3 py-1"
+                                    data-date="${absentEntry.date}"
+                                    data-absent-teacher="${absentEntry.teacher}"
+                                    data-class="${classToCover.class}"
+                                    data-day="${classToCover.day}"
+                                    data-time="${classToCover.time}"
+                                    data-subject="${classToCover.subject}">
+                                    Tugaskan Guru Ganti
+                                </button>
+                            </td>
+                        `;
+                        substituteTimetableTableBody.appendChild(row);
+                    });
+                }
+            });
+
+            // Add event listeners for assign substitute buttons
+            document.querySelectorAll('.btn-assign-substitute').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const date = e.target.dataset.date;
+                    const absentTeacher = e.target.dataset.absentTeacher;
+                    const className = e.target.dataset.class;
+                    const day = e.target.dataset.day;
+                    const time = e.target.dataset.time;
+                    const subject = e.target.dataset.subject;
+
+                    promptForSubstitute(date, absentTeacher, className, day, time, subject, e.target);
+                });
+            });
+        }
+
+        function promptForSubstitute(date, absentTeacher, className, day, time, subject, buttonElement) {
+            const availableTeachers = teachers.filter(t => t.name !== absentTeacher); // Exclude the absent teacher
+
+            if (availableTeachers.length === 0) {
+                showMessage('Tiada guru lain yang tersedia untuk dijadikan guru ganti.', true);
+                return;
+            }
+
+            // Create a simple modal/prompt
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50';
+            modal.innerHTML = `
+                <div class="bg-white p-6 rounded-xl shadow-lg w-full max-w-sm">
+                    <h3 class="text-xl font-semibold mb-4">Tugaskan Guru Ganti</h3>
+                    <p class="mb-2"><strong>Guru Tidak Hadir:</strong> ${absentTeacher}</p>
+                    <p class="mb-2"><strong>Tarikh:</strong> ${date}</p>
+                    <p class="mb-4"><strong>Kelas:</strong> ${className}, <strong>Masa:</strong> ${time}, <strong>Subjek:</strong> ${subject}</p>
+                    <label for="substitute-select" class="block text-gray-700 text-sm font-semibold mb-2">Pilih Guru Ganti:</label>
+                    <select id="substitute-select" class="form-input mb-4 w-full">
+                        <option value="">Pilih Guru Ganti</option>
+                        ${availableTeachers.map(t => `<option value="${t.name}">${t.name}</option>`).join('')}
+                    </select>
+                    <div class="flex justify-end space-x-3">
+                        <button id="cancel-substitute" class="btn-secondary">Batal</button>
+                        <button id="confirm-substitute" class="btn-primary">Tugaskan</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+
+            const substituteSelect = modal.querySelector('#substitute-select');
+            const confirmBtn = modal.querySelector('#confirm-substitute');
+            const cancelBtn = modal.querySelector('#cancel-substitute');
+
+            confirmBtn.addEventListener('click', () => {
+                const selectedSubstitute = substituteSelect.value;
+                if (selectedSubstitute) {
+                    assignSubstitute(date, absentTeacher, className, day, time, subject, selectedSubstitute);
+                    modal.remove();
+                } else {
+                    showMessage('Sila pilih guru ganti.', true);
+                }
+            });
+
+            cancelBtn.addEventListener('click', () => {
+                modal.remove();
+            });
+        }
+
+        function assignSubstitute(date, absentTeacherName, className, day, time, subject, substituteTeacherName) {
+            const absentEntry = absentTeachers.find(
+                entry => entry.date === date && entry.teacher === absentTeacherName
+            );
+
+            if (absentEntry) {
+                // Check if this specific class/time slot already has a substitute assigned
+                const existingAssignmentIndex = absentEntry.assignedSubstitutes.findIndex(
+                    sub => sub.class === className && sub.time === time
+                );
+
+                const newAssignment = {
+                    class: className,
+                    day: day,
+                    time: time,
+                    subject: subject,
+                    substituteTeacher: substituteTeacherName
+                };
+
+                if (existingAssignmentIndex > -1) {
+                    absentEntry.assignedSubstitutes[existingAssignmentIndex] = newAssignment;
+                } else {
+                    absentEntry.assignedSubstitutes.push(newAssignment);
+                }
+
+                // Also update the main substituteAssignments array for a flatter structure if needed later
+                const mainAssignmentIndex = substituteAssignments.findIndex(
+                    assign => assign.date === date && assign.absentTeacher === absentTeacherName &&
+                              assign.class === className && assign.time === time
+                );
+                if (mainAssignmentIndex > -1) {
+                    substituteAssignments[mainAssignmentIndex] = {
+                        date, absentTeacher: absentTeacherName, class: className, day, time, subject, substituteTeacher: substituteTeacherName
+                    };
+                } else {
+                    substituteAssignments.push({
+                        date, absentTeacher: absentTeacherName, class: className, day, time, subject, substituteTeacher: substituteTeacherName
+                    });
+                }
+
+                saveData();
+                showMessage(`Guru ganti ${substituteTeacherName} berjaya ditugaskan untuk ${className} pada ${time}.`);
+                renderSubstituteTimetable(); // Re-render the table to show the update
+            } else {
+                showMessage('Ralat: Entri guru tidak hadir tidak ditemui.', true);
+            }
+        }
+
+        // Initial render on load if already logged in
+        if (localStorage.getItem('loggedIn') === 'true') {
+            initializeDashboard();
+        }
+    </script>
+</body>
+</html>
