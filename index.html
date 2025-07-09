@@ -56,6 +56,16 @@
         .btn-secondary:hover {
             background-color: #4b5563; /* bg-gray-600 */
         }
+        .btn-danger {
+            background-color: #ef4444; /* bg-red-500 */
+            color: #ffffff; /* text-white */
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.375rem; /* rounded-md */
+            transition: background-color 0.2s;
+        }
+        .btn-danger:hover {
+            background-color: #dc2626; /* bg-red-600 */
+        }
         .tab-button {
             padding: 0.75rem 1.25rem;
             border-radius: 0.5rem;
@@ -183,7 +193,7 @@
                 </form>
                 <div class="mt-4">
                     <h4 class="font-semibold text-gray-700 mb-2">Senarai Kelas:</h4>
-                    <ul id="class-list" class="list-disc list-inside text-gray-600"></ul>
+                    <div id="class-list" class="flex flex-wrap gap-2"></div>
                 </div>
             </div>
 
@@ -196,7 +206,7 @@
                 </form>
                 <div class="mt-4">
                     <h4 class="font-semibold text-gray-700 mb-2">Senarai Guru:</h4>
-                    <ul id="teacher-list" class="list-disc list-inside text-gray-600"></ul>
+                    <div id="teacher-list" class="flex flex-wrap gap-2"></div>
                 </div>
             </div>
 
@@ -209,7 +219,7 @@
                 </form>
                 <div class="mt-4">
                     <h4 class="font-semibold text-gray-700 mb-2">Senarai Subjek:</h4>
-                    <ul id="subject-list" class="list-disc list-inside text-gray-600"></ul>
+                    <div id="subject-list" class="flex flex-wrap gap-2"></div>
                 </div>
             </div>
 
@@ -223,7 +233,7 @@
                 </form>
                 <div class="mt-4">
                     <h4 class="font-semibold text-gray-700 mb-2">Senarai Slot Masa:</h4>
-                    <ul id="time-list" class="list-disc list-inside text-gray-600"></ul>
+                    <div id="time-list" class="flex flex-wrap gap-2"></div>
                 </div>
             </div>
 
@@ -352,20 +362,20 @@
 
         const addClassForm = document.getElementById('add-class-form');
         const classNameInput = document.getElementById('class-name');
-        const classListUl = document.getElementById('class-list');
+        const classListDiv = document.getElementById('class-list'); // Changed from ul to div
 
         const addTeacherForm = document.getElementById('add-teacher-form');
         const teacherNameInput = document.getElementById('teacher-name');
-        const teacherListUl = document.getElementById('teacher-list');
+        const teacherListDiv = document.getElementById('teacher-list'); // Changed from ul to div
 
         const addSubjectForm = document.getElementById('add-subject-form');
         const subjectNameInput = document.getElementById('subject-name');
-        const subjectListUl = document.getElementById('subject-list');
+        const subjectListDiv = document.getElementById('subject-list'); // Changed from ul to div
 
         const addTimeForm = document.getElementById('add-time-form');
         const timeStartInput = document.getElementById('time-start');
         const timeEndInput = document.getElementById('time-end');
-        const timeListUl = document.getElementById('time-list');
+        const timeListDiv = document.getElementById('time-list'); // Changed from ul to div
 
         const setTimetableForm = document.getElementById('set-timetable-form');
         const ttClassSelect = document.getElementById('tt-class');
@@ -418,13 +428,17 @@
             });
         }
 
-        // Render lists (classes, teachers, subjects, times)
-        function renderList(ulElement, dataArray) {
-            ulElement.innerHTML = '';
+        // Render lists (classes, teachers, subjects, times) with delete buttons
+        function renderList(parentElement, dataArray, type) {
+            parentElement.innerHTML = '';
             dataArray.forEach(item => {
-                const li = document.createElement('li');
-                li.textContent = item.name || `${item.start} - ${item.end}`;
-                ulElement.appendChild(li);
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'flex items-center justify-between p-2 bg-gray-100 rounded-md';
+                itemDiv.innerHTML = `
+                    <span>${item.name || `${item.start} - ${item.end}`}</span>
+                    <button class="btn-danger ml-4" data-type="${type}" data-name="${item.name || item.range}">Padam</button>
+                `;
+                parentElement.appendChild(itemDiv);
             });
         }
 
@@ -463,10 +477,10 @@
         }
 
         function renderAllLists() {
-            renderList(classListUl, classes);
-            renderList(teacherListUl, teachers);
-            renderList(subjectListUl, subjects);
-            renderList(timeListUl, timeSlots);
+            renderList(classListDiv, classes, 'class');
+            renderList(teacherListDiv, teachers, 'teacher');
+            renderList(subjectListDiv, subjects, 'subject');
+            renderList(timeListDiv, timeSlots, 'timeSlot');
         }
 
         function populateAllDropdowns() {
@@ -522,7 +536,7 @@
             if (className && !classes.some(c => c.name === className)) {
                 classes.push({ name: className });
                 saveData();
-                renderList(classListUl, classes);
+                renderList(classListDiv, classes, 'class');
                 populateDropdown(filterClassSelect, classes);
                 populateDropdown(ttClassSelect, classes);
                 classNameInput.value = '';
@@ -539,7 +553,7 @@
             if (teacherName && !teachers.some(t => t.name === teacherName)) {
                 teachers.push({ name: teacherName });
                 saveData();
-                renderList(teacherListUl, teachers);
+                renderList(teacherListDiv, teachers, 'teacher');
                 populateDropdown(filterTeacherSelect, teachers);
                 populateDropdown(ttTeacherSelect, teachers);
                 populateDropdown(absentTeacherSelect, teachers);
@@ -557,7 +571,7 @@
             if (subjectName && !subjects.some(s => s.name === subjectName)) {
                 subjects.push({ name: subjectName });
                 saveData();
-                renderList(subjectListUl, subjects);
+                renderList(subjectListDiv, subjects, 'subject');
                 populateDropdown(ttSubjectSelect, subjects);
                 subjectNameInput.value = '';
                 showMessage('Subjek berjaya ditambah!');
@@ -577,7 +591,7 @@
                 timeSlots.push({ start: startTime, end: endTime, range: timeRange });
                 timeSlots.sort((a, b) => a.start.localeCompare(b.start)); // Sort by start time
                 saveData();
-                renderList(timeListUl, timeSlots);
+                renderList(timeListDiv, timeSlots, 'timeSlot');
                 populateDropdown(ttTimeSelect, timeSlots, 'range', 'range');
                 timeStartInput.value = '';
                 timeEndInput.value = '';
@@ -586,6 +600,73 @@
                 showMessage('Slot masa tidak sah atau sudah wujud.', true);
             }
         });
+
+        // --- Delete Data Functions ---
+        function deleteItem(type, name) {
+            let dataArray;
+            let displayElement;
+            let dropdownsToUpdate = [];
+
+            if (type === 'class') {
+                dataArray = classes;
+                displayElement = classListDiv;
+                dropdownsToUpdate = [filterClassSelect, ttClassSelect];
+            } else if (type === 'teacher') {
+                dataArray = teachers;
+                displayElement = teacherListDiv;
+                dropdownsToUpdate = [filterTeacherSelect, ttTeacherSelect, absentTeacherSelect];
+            } else if (type === 'subject') {
+                dataArray = subjects;
+                displayElement = subjectListDiv;
+                dropdownsToUpdate = [ttSubjectSelect];
+            } else if (type === 'timeSlot') {
+                dataArray = timeSlots;
+                displayElement = timeListDiv;
+                dropdownsToUpdate = [ttTimeSelect];
+            } else {
+                return; // Invalid type
+            }
+
+            const initialLength = dataArray.length;
+            if (type === 'timeSlot') {
+                dataArray = dataArray.filter(item => item.range !== name);
+            } else {
+                dataArray = dataArray.filter(item => item.name !== name);
+            }
+
+            if (dataArray.length < initialLength) {
+                // Update the global array reference
+                if (type === 'class') classes = dataArray;
+                else if (type === 'teacher') teachers = dataArray;
+                else if (type === 'subject') subjects = dataArray;
+                else if (type === 'timeSlot') timeSlots = dataArray;
+
+                saveData();
+                renderList(displayElement, dataArray, type);
+                dropdownsToUpdate.forEach(select => populateDropdown(select, dataArray, select.id === 'tt-time' ? 'range' : 'name', select.id === 'tt-time' ? 'range' : 'name'));
+                showMessage(`${type === 'timeSlot' ? 'Slot masa' : type} '${name}' berjaya dipadam!`);
+
+                // Re-render relevant tables if data that affects them is deleted
+                renderTimetableDisplay();
+                renderSubstituteTimetable();
+            } else {
+                showMessage(`Gagal memadam ${type === 'timeSlot' ? 'slot masa' : type} '${name}'.`, true);
+            }
+        }
+
+        // Event delegation for delete buttons
+        document.querySelectorAll('.card > div > div[id$="-list"]').forEach(listContainer => {
+            listContainer.addEventListener('click', (e) => {
+                if (e.target.classList.contains('btn-danger')) {
+                    const type = e.target.dataset.type;
+                    const name = e.target.dataset.name;
+                    if (confirm(`Adakah anda pasti ingin memadam '${name}'?`)) { // Using confirm for simplicity, would replace with custom modal in production
+                        deleteItem(type, name);
+                    }
+                }
+            });
+        });
+
 
         // --- Manual Timetable Setting ---
         setTimetableForm.addEventListener('submit', (e) => {
